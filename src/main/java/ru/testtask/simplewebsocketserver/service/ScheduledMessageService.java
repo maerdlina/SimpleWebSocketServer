@@ -3,6 +3,7 @@ package ru.testtask.simplewebsocketserver.service;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -10,18 +11,22 @@ import java.util.Date;
 public class ScheduledMessageService {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private static final SimpleDateFormat DATE_FORMAT =
-            new SimpleDateFormat("HH:mm:ss");
+    private final WebSocketSessionCounter sessionCounter;
 
-    public ScheduledMessageService(SimpMessagingTemplate messagingTemplate) {
+    public ScheduledMessageService(SimpMessagingTemplate messagingTemplate,
+                                   WebSocketSessionCounter sessionCounter) {
         this.messagingTemplate = messagingTemplate;
+        this.sessionCounter = sessionCounter;
     }
 
     @Scheduled(fixedRate = 5000)
     public void sendMessageBySchedule() {
-        String message = "Message from server: " + DATE_FORMAT.format(new Date());
-        System.out.println("Sending message: " + message);
-        this.messagingTemplate.convertAndSend("/topic/messages", message);
-    }
+        if (!sessionCounter.hasSubscribers()) {
+            return;
+        }
 
+        String message = "Server: " + new SimpleDateFormat("HH:mm:ss").format(new Date());
+        System.out.println("Send message (" + sessionCounter.getActive() + " clients): " + message);
+        messagingTemplate.convertAndSend("/topic/messages", message);
+    }
 }
