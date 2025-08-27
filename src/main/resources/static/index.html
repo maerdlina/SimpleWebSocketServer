@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>WebSocket</h1>
+<button id="connectBtn" onclick="connect()">Connect</button>
+<button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+
+<p><strong>Status:</strong> <span id="status">Disconnected</span></p>
+
+<div id="messages" style="border:1px solid #ccc; height:300px; overflow-y:scroll; padding:10px;">
+    <p>Waiting...</p>
+</div>
+
+<script>
+    let stompClient = null;
+    const status = document.getElementById('status');
+    const messages = document.getElementById('messages');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+
+    function connect() {
+        const url = 'ws://' + window.location.host + '/ws-messages';
+        const socket = new WebSocket(url);
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connect:', frame);
+            status.textContent = 'Connect';
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+
+            stompClient.subscribe('/topic/messages', function(message) {
+                addMessage(message.body);
+            });
+
+            addMessage('Connect to server');
+        }, function(error) {
+            console.error('Error:', error);
+            status.textContent = 'Error';
+            addMessage('Connection error');
+        });
+    }
+
+    function disconnect() {
+        if (stompClient) {
+            stompClient.disconnect();
+            stompClient = null;
+        }
+        status.textContent = 'Disconnect';
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+        addMessage('Disconnect');
+    }
+
+    function addMessage(text) {
+        const p = document.createElement('p');
+        p.innerHTML = `<small>[${new Date().toLocaleTimeString()}]</small> ${text}`;
+        messages.appendChild(p);
+        messages.scrollTop = messages.scrollHeight;
+    }
+</script>
+</body>
+</html>
