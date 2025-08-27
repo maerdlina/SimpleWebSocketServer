@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WebSocket Client Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>WebSocket Client Test</h1>
+<button onclick="connect()">Connect</button>
+<button onclick="disconnect()">Disconnect</button>
+
+<div id="messages" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll;">
+    <p>Messages here...</p>
+</div>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('/ws-messages');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connect: ' + frame);
+
+            stompClient.subscribe('/topic/messages', function(message) {
+                showMessage(message.body);
+            });
+
+
+            document.getElementById('messages').innerHTML += '<p>Connect!</p>';
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        document.getElementById('messages').innerHTML += '<p>Disconnect from server</p>';
+        console.log("Отключено");
+    }
+
+    function showMessage(message) {
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+</script>
+</body>
+</html>
